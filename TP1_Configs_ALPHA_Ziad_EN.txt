@@ -1,0 +1,148 @@
+  TP1 - Cisco Static Routing Configuration
+  Author   : ALPHA Ziad Ramdan
+  Field    : L1 Cybersecurity
+  School   : Institut Superieur de Management (ISM) - Dakar, Senegal
+  Date     : March 11, 2026
+  Tool     : Cisco Packet Tracer 8.2.2 - Cisco Router 2911
+
+
+  1. NETWORK TOPOLOGY
+
+  Device        Role                   Connection
+  PC0           Console + LAN1         Console cable to R1 / Straight cable Gi0/0
+  R1            Main Router            Gi0/0 to PC0 / Gi0/1 to R2
+  R2            Secondary Router       Gi0/0 to R1 / Gi0/1 to PC1
+  PC1           LAN2                   Straight cable to Gi0/1 of R2
+
+
+  2. IP ADDRESSING PLAN
+
+  Device        Interface    IP Address        Mask                    Gateway
+  R1            Gi0/0        192.168.1.1       255.255.255.0 /24       -
+  R1            Gi0/1        10.0.0.1          255.255.255.252 /30     -
+  R2            Gi0/0        10.0.0.2          255.255.255.252 /30     -
+  R2            Gi0/1        192.168.2.1       255.255.255.0 /24       -
+  PC0 (LAN1)    Fa0          192.168.1.10      255.255.255.0 /24       192.168.1.1
+  PC1 (LAN2)    Fa0          192.168.2.10      255.255.255.0 /24       192.168.2.1
+
+  Note : The /30 mask on the point-to-point link provides exactly 2 usable
+         addresses. Using /24 here would have wasted addresses unnecessarily.
+
+
+  3. ROUTER R1 CONFIGURATION
+
+enable
+configure terminal
+
+hostname R1
+
+enable secret cisco
+line console 0
+ password cisco1
+ login
+exit
+line vty 0 5
+ password cisco12
+ login
+exit
+service password-encryption
+banner motd #Acces strictement interdit#
+
+interface GigabitEthernet0/0
+ description Link to LAN1 - PC0
+ ip address 192.168.1.1 255.255.255.0
+ no shutdown
+exit
+
+interface GigabitEthernet0/1
+ description Link to ROUTER2
+ ip address 10.0.0.1 255.255.255.252
+ no shutdown
+exit
+
+ip route 192.168.2.0 255.255.255.0 10.0.0.2
+
+end
+wr
+
+
+  4. ROUTER R2 CONFIGURATION
+
+enable
+configure terminal
+
+hostname R2
+
+enable secret cisco
+line console 0
+ password cisco1
+ login
+exit
+line vty 0 5
+ password cisco12
+ login
+exit
+service password-encryption
+banner motd #Acces strictement interdit#
+
+interface GigabitEthernet0/0
+ description Link to ROUTER1
+ ip address 10.0.0.2 255.255.255.252
+ no shutdown
+exit
+
+interface GigabitEthernet0/1
+ description Link to LAN2 - PC1
+ ip address 192.168.2.1 255.255.255.0
+ no shutdown
+exit
+
+ip route 192.168.1.0 255.255.255.0 10.0.0.1
+
+end
+wr
+
+
+  5. PC0 CONFIGURATION (LAN1)
+
+  IP Address      : 192.168.1.10
+  Subnet Mask     : 255.255.255.0
+  Default Gateway : 192.168.1.1
+
+
+  6. PC1 CONFIGURATION (LAN2)
+
+  IP Address      : 192.168.2.10
+  Subnet Mask     : 255.255.255.0
+  Default Gateway : 192.168.2.1
+
+
+  7. STATIC ROUTES
+
+  Router     Command                                           Meaning
+  R1         ip route 192.168.2.0 255.255.255.0 10.0.0.2      To reach LAN2 via R2
+  R2         ip route 192.168.1.0 255.255.255.0 10.0.0.1      To reach LAN1 via R1
+
+
+  8. VERIFICATION COMMANDS
+
+  Command                             Shortcut       Description
+  show ip interface brief             sh ip int br   Status of all interfaces
+  show ip route                       sh ip ro       Full routing table
+  show running-config                 sh ru          Current configuration
+  copy running-config startup-config  cop ru st      Save configuration
+  ping [address]                      ping           Connectivity test
+
+
+  9. CONNECTIVITY TEST RESULTS
+
+  Source               Destination               Result      Note
+  PC0 (192.168.1.10)   R1 Gi0/0 (192.168.1.1)   100%        Local communication OK
+  PC0 (192.168.1.10)   PC1 (192.168.2.10)        100%        Inter-network communication OK
+
+  Note : The first 2 packets of the ping to PC1 were lost during ARP resolution.
+         On the second attempt : 100% success. Completely normal behavior.
+
+
+  END OF TP1
+  ALPHA Ziad Ramdan - L1 Cybersecurity - ISM Dakar - March 11, 2026

@@ -1,0 +1,149 @@
+  TP1 - Configuration et Routage Statique Cisco
+  Auteur   : ALPHA Ziad Ramdan
+  Filiere  : L1 Cybersecurite
+  Ecole    : Institut Superieur de Management (ISM) - Dakar, Senegal
+  Date     : 11 Mars 2026
+  Outil    : Cisco Packet Tracer 8.2.2 - Routeur Cisco 2911
+
+
+  1. TOPOLOGIE DU RESEAU
+
+  Equipement    Role                   Connexion
+  PC0           Console + LAN1         Cable console vers R1 / Cable droit Gi0/0
+  R1            Routeur principal      Gi0/0 vers PC0 / Gi0/1 vers R2
+  R2            Routeur secondaire     Gi0/0 vers R1 / Gi0/1 vers PC1
+  PC1           LAN2                   Cable droit vers Gi0/1 de R2
+
+
+  2. PLAN D'ADRESSAGE IP
+
+  Equipement    Interface    Adresse IP        Masque                  Gateway
+  R1            Gi0/0        192.168.1.1       255.255.255.0 /24       -
+  R1            Gi0/1        10.0.0.1          255.255.255.252 /30     -
+  R2            Gi0/0        10.0.0.2          255.255.255.252 /30     -
+  R2            Gi0/1        192.168.2.1       255.255.255.0 /24       -
+  PC0 (LAN1)    Fa0          192.168.1.10      255.255.255.0 /24       192.168.1.1
+  PC1 (LAN2)    Fa0          192.168.2.10      255.255.255.0 /24       192.168.2.1
+
+  NB : Le masque /30 sur le lien point a point offre exactement 2 adresses
+       utilisables. Un /24 aurait ete un gaspillage d'adresses inutile.
+
+
+  3. CONFIGURATION ROUTEUR R1
+
+enable
+configure terminal
+
+hostname R1
+
+enable secret cisco
+line console 0
+ password cisco1
+ login
+exit
+line vty 0 5
+ password cisco12
+ login
+exit
+service password-encryption
+banner motd #Acces strictement interdit#
+
+interface GigabitEthernet0/0
+ description Lien vers LAN1 - PC0
+ ip address 192.168.1.1 255.255.255.0
+ no shutdown
+exit
+
+interface GigabitEthernet0/1
+ description Lien vers ROUTER2
+ ip address 10.0.0.1 255.255.255.252
+ no shutdown
+exit
+
+ip route 192.168.2.0 255.255.255.0 10.0.0.2
+
+end
+wr
+
+
+  4. CONFIGURATION ROUTEUR R2
+
+enable
+configure terminal
+
+hostname R2
+
+enable secret cisco
+line console 0
+ password cisco1
+ login
+exit
+line vty 0 5
+ password cisco12
+ login
+exit
+service password-encryption
+banner motd #Acces strictement interdit#
+
+interface GigabitEthernet0/0
+ description Lien vers ROUTER1
+ ip address 10.0.0.2 255.255.255.252
+ no shutdown
+exit
+
+interface GigabitEthernet0/1
+ description Lien vers LAN2 - PC1
+ ip address 192.168.2.1 255.255.255.0
+ no shutdown
+exit
+
+ip route 192.168.1.0 255.255.255.0 10.0.0.1
+
+end
+wr
+
+
+  5. CONFIGURATION PC0 (LAN1)
+
+  Adresse IP      : 192.168.1.10
+  Masque          : 255.255.255.0
+  Passerelle      : 192.168.1.1
+
+
+  6. CONFIGURATION PC1 (LAN2)
+
+  Adresse IP      : 192.168.2.10
+  Masque          : 255.255.255.0
+  Passerelle      : 192.168.2.1
+
+
+  7. ROUTES STATIQUES
+
+  Routeur    Commande                                          Signification
+  R1         ip route 192.168.2.0 255.255.255.0 10.0.0.2      Vers LAN2 via R2
+  R2         ip route 192.168.1.0 255.255.255.0 10.0.0.1      Vers LAN1 via R1
+
+
+  8. COMMANDES DE VERIFICATION
+
+  Commande                            Raccourci      Description
+  show ip interface brief             sh ip int br   Etat de toutes les interfaces
+  show ip route                       sh ip ro       Table de routage complete
+  show running-config                 sh ru          Configuration en cours
+  copy running-config startup-config  cop ru st      Sauvegarde configuration
+  ping [adresse]                      ping           Test de connectivite
+
+
+  9. RESULTATS DES TESTS DE CONNECTIVITE
+
+  Source               Destination               Resultat    Observation
+  PC0 (192.168.1.10)   R1 Gi0/0 (192.168.1.1)   100%        Communication locale
+  PC0 (192.168.1.10)   PC1 (192.168.2.10)        100%        Communication inter-reseau
+
+  NB : Les 2 premiers paquets du premier ping vers PC1 etaient perdus lors
+       de la resolution ARP. Au second essai : 100% de succes.
+       Comportement tout a fait normal.
+
+
+  FIN DU TP1
+  ALPHA Ziad Ramdan - L1 Cybersecurite - ISM Dakar - 11 Mars 2026
