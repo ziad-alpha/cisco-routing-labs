@@ -1,0 +1,151 @@
+  TP2 - DHCP Configuration on Cisco Router
+  Author   : ALPHA Ziad Ramdan
+  Field    : L1 Cybersecurity
+  School   : Institut Superieur de Management (ISM) - Dakar, Senegal
+  Date     : March 15, 2026
+  Tool     : Cisco Packet Tracer 8.2.2 - Cisco Router 2911
+
+
+  1. NETWORK TOPOLOGY
+
+  Device        Role                          Connection
+  PC0           DHCP Client - LAN1            Straight cable to Gi0/1 of R1
+  R1            Router + DHCP Server LAN1     Gi0/1 to PC0 / Gi0/0 to R2
+  R2            Router + DHCP Server LAN2     Gi0/0 to R1 / Gi0/1 to PC1
+  PC1           DHCP Client - LAN2            Straight cable to Gi0/1 of R2
+
+
+  2. IP ADDRESSING PLAN
+
+  Device        Interface    IP Address        Mask                    Gateway
+  R1            Gi0/1        192.168.1.1       255.255.255.0 /24       -
+  R1            Gi0/0        10.0.0.1          255.255.255.252 /30     -
+  R2            Gi0/0        10.0.0.2          255.255.255.252 /30     -
+  R2            Gi0/1        192.168.2.1       255.255.255.0 /24       -
+  PC0 (LAN1)    Fa0          DHCP - 192.168.1.11   255.255.255.0 /24   192.168.1.1
+  PC1 (LAN2)    Fa0          DHCP - 192.168.2.11   255.255.255.0 /24   192.168.2.1
+
+
+  3. ROUTER R1 CONFIGURATION
+
+enable
+configure terminal
+
+hostname R1
+
+enable secret cisco
+line console 0
+ password cisco1
+ login
+exit
+line vty 0 5
+ password cisco12
+ login
+exit
+service password-encryption
+banner motd #Acces strictement interdit#
+
+interface GigabitEthernet0/1
+ description Link to LAN1 - PC0
+ ip address 192.168.1.1 255.255.255.0
+ no shutdown
+exit
+
+interface GigabitEthernet0/0
+ description Link to ROUTER2
+ ip address 10.0.0.1 255.255.255.252
+ no shutdown
+exit
+
+ip route 192.168.2.0 255.255.255.0 10.0.0.2
+
+ip dhcp pool LAN1
+ network 192.168.1.0 255.255.255.0
+ default-router 192.168.1.1
+ dns-server 8.8.8.8
+exit
+
+ip dhcp excluded-address 192.168.1.1 192.168.1.10
+
+end
+wr
+
+
+  4. ROUTER R2 CONFIGURATION
+
+enable
+configure terminal
+
+hostname R2
+
+enable secret cisco
+line console 0
+ password cisco1
+ login
+exit
+line vty 0 5
+ password cisco12
+ login
+exit
+service password-encryption
+banner motd #Acces strictement interdit#
+
+interface GigabitEthernet0/0
+ description Link to ROUTER1
+ ip address 10.0.0.2 255.255.255.252
+ no shutdown
+exit
+
+interface GigabitEthernet0/1
+ description Link to LAN2 - PC1
+ ip address 192.168.2.1 255.255.255.0
+ no shutdown
+exit
+
+ip route 192.168.1.0 255.255.255.0 10.0.0.1
+
+ip dhcp pool LAN2
+ network 192.168.2.0 255.255.255.0
+ default-router 192.168.2.1
+ dns-server 8.8.8.8
+exit
+
+ip dhcp excluded-address 192.168.2.1 192.168.2.10
+
+end
+wr
+
+
+  5. DHCP COMMANDS EXPLANATION
+
+  Command                               Description
+  ip dhcp pool NAME                     Create a DHCP pool
+  network NETWORK MASK                  Address range to distribute
+  default-router GATEWAY                Gateway given to clients
+  dns-server IP                         DNS server given to clients
+  ip dhcp excluded-address IP1 IP2      Reserved addresses not distributed
+  show ip dhcp binding                  View IP addresses assigned to clients
+  show ip dhcp pool                     View pool details
+  show ip dhcp conflict                 View address conflicts
+
+
+  6. DORA PROCESS
+
+  Step     Message      Sender      Description
+  1        Discover     PC          PC searches for a DHCP server
+  2        Offer        Router      Router proposes an available IP
+  3        Request      PC          PC accepts the offer
+  4        Acknowledge  Router      Router confirms the assignment
+
+
+  7. CONNECTIVITY TEST RESULTS
+
+  Source               Destination               Result      Note
+  PC0 (192.168.1.11)   PC1 (192.168.2.11)        100%        Inter-network communication OK
+
+  Note : The first 2 packets were lost during ARP resolution on the first attempt.
+         On the second attempt : 100% success. Completely normal behavior.
+
+
+  END OF TP2
+  ALPHA Ziad Ramdan - L1 Cybersecurity - ISM Dakar - March 15, 2026
